@@ -1,9 +1,5 @@
 from random import randint
 
-numbers = ["ace", "2", "3", "4", "5", "6", "7",
-           "8", "9", "10", "jack", "queen", "king"]
-suits = ["spades", "clubs", "diamonds", "hearts"]
-
 
 class Player:
     """class for each player that contains their point total and their cards"""
@@ -12,67 +8,74 @@ class Player:
         self.cards = []
         self.points = 0
 
-    def get_points(self):
+    def getPoints(self):
+        """gets the blackjack point total for the player"""
         return self.points
 
-    def get_last_card_name(self):
-        """grabs the last card in the array for output"""
-        return self.cards[-1].get_card_name()
-
-    def make_turn(self, cards_drawn):
-        """draws a random card and adds it to the player's array"""
-        not_unique = True
-        while not_unique:
-            # Picks a random number and suit
-            number = numbers[randint(0, 12)]
-            suit = suits[randint(0, 3)]
-            this_card = Card(number, suit)
-            not_unique = False
-            for card in cards_drawn:
-                if this_card == card:
-                    not_unique = True
-
-        cards_drawn.append(this_card)
-        self.cards.append(this_card)
-        return this_card
-
-    def set_points(self):
-        """calculates the player's blackjack score"""
+    def setPoints(self):
+        """calculates the player's maximum blackjack score"""
         total = 0
-        num_aces = 0
+        numAces = 0
         for card in self.cards:
-            value = card.get_points()
+            value = card.getPoints()
             if not value:
-                num_aces += 1
+                numAces += 1
                 continue
             total += value
-        if not num_aces:  # total if no aces are present
+        if not numAces:  # total if no aces are present
             self.points = total
         else:  # highest points under 21 if aces are present
-            if total + 10 + num_aces > 21:
-                self.points = total + num_aces
+            if total + 10 + numAces > 21:
+                self.points = total + numAces  # aces are counted as 1 point
             else:
-                self.points = total + 10 + num_aces
+                self.points = total + 10 + numAces  # one ace is 11 and the rest are 1
+
+    def getLastCardName(self):
+        """grabs the last card in the array for output"""
+        return self.cards[-1].getCardName()
+
+    def makeTurn(self, cardsDrawn):
+        """draws a random card and adds it to the player's array"""
+        cardIsCopy = True
+        while cardIsCopy:
+            # Picks a random card
+            newCard = Card()
+            cardIsCopy = False
+            for card in cardsDrawn:
+                if newCard == card:
+                    cardIsCopy = True
+                    break
+
+        cardsDrawn.append(newCard)
+        self.cards.append(newCard)
+        return newCard
 
 
 class Card:
     """class for each card drawn, includes number and suit"""
 
-    def __init__(self, number, suit):
-        self.number = number
-        self.suit = suit
+    NUMBERS = ["ace", "2", "3", "4", "5", "6", "7",
+               "8", "9", "10", "jack", "queen", "king"]
+    SUITS = ["spades", "clubs", "diamonds", "hearts"]
 
-    def get_suit(self):
+    def __init__(self):
+        self.number = Card.NUMBERS[randint(0, 12)]
+        self.suit = Card.SUITS[randint(0, 3)]
+
+    def getSuit(self):
+        """gets the suit from the card"""
         return self.suit
 
-    def get_number(self):
+    def getNumber(self):
+        """gets the number from the card"""
         return self.number
 
-    def get_card_name(self):
+    def getCardName(self):
         """outputs the name of the card in the form of 'the NUM of SUIT'"""
         return 'the ' + self.number + ' of ' + self.suit
 
-    def get_points(self):
+    def getPoints(self):
+        """gets the point number for the card in blackjack. If the card is an ace, it will return 0"""
         if self.number == "ace":
             return 0  # returns 0 to process later
         elif self.number == "jack" or self.number == "queen" or self.number == "king":
@@ -81,6 +84,7 @@ class Card:
             return int(self.number)
 
     def __eq__(self, other):
+        """figure out if two cards are equal"""
         if self.number == other.number and self.suit == other.suit:
             return True
         else:
@@ -88,56 +92,57 @@ class Card:
 
 
 class BlackjackGame:
-    """Class for the game of blackjack to store game variables"""
+    """Class for the game of Blackjack to store game variables"""
 
     def __init__(self):
-        self.cards_dealt = []
+        self.cardsDealt = []  # used to draw new cards that haven't been played yet
         self.dealer = Player()
         self.human = Player()
 
-    def play_game(self):
+    def playGame(self):
+        """plays the blackjack game"""
         # COMPUTER TURN, Computer is dealt 1 card
-        self.dealer.make_turn(self.cards_dealt)
-        print("\nThe dealer was dealt " + self.dealer.get_last_card_name())
+        self.dealer.makeTurn(self.cardsDealt)
+        print("\nThe dealer was dealt " + self.dealer.getLastCardName())
 
         # PLAYER TURN, Player is dealt 2 cards
-        self.human.make_turn(self.cards_dealt)
-        print("You are dealt " + self.human.get_last_card_name(), end=" ")
-        self.human.make_turn(self.cards_dealt)
-        print("and " + self.human.get_last_card_name())
+        self.human.makeTurn(self.cardsDealt)
+        print("You are dealt " + self.human.getLastCardName(), end=" ")
+        self.human.makeTurn(self.cardsDealt)
+        print("and " + self.human.getLastCardName())
 
-        self.human.set_points()
         choice = ""
-        self.dealer.set_points()
-        while self.human.get_points() < 21 and choice != "s":  # hit or stand loop
+        self.human.setPoints()
+        self.dealer.setPoints()
+        while self.human.getPoints() < 21 and choice != "s":  # hit or stand loop
             choice = str(input("Would you like to hit or stand? (h,s): "))
             if not choice:
                 continue
             choice = choice[0].lower()
             if choice != "s":
-                self.human.make_turn(self.cards_dealt)
-                print("You are dealt " + self.human.get_last_card_name())
-                self.human.set_points()
+                self.human.makeTurn(self.cardsDealt)
+                print("You are dealt " + self.human.getLastCardName())
+                self.human.setPoints()
 
-        if self.human.get_points() > 21:
+        if self.human.getPoints() > 21:
             print("\nYa busted, buster")
         elif choice == "s":  # stand, computer draws
             print("You wimp\n\n")
 
-            self.dealer.make_turn(self.cards_dealt)
-            print("The dealer flips over " + self.dealer.get_last_card_name())
-            self.dealer.set_points()
+            self.dealer.makeTurn(self.cardsDealt)
+            print("The dealer flips over " + self.dealer.getLastCardName())
+            self.dealer.setPoints()
 
             # sees if computer should draw another card
-            while self.dealer.get_points() < 17:
-                self.dealer.make_turn(self.cards_dealt)
+            while self.dealer.getPoints() < 17:
+                self.dealer.makeTurn(self.cardsDealt)
                 print("The dealer hits and is dealt " +
-                      self.dealer.get_last_card_name())
-                self.dealer.set_points()
+                      self.dealer.getLastCardName())
+                self.dealer.setPoints()
 
-            if self.dealer.get_points() > 21:
+            if self.dealer.getPoints() > 21:
                 print("\nWell done, I guess a blind squirrel sometimes finds a nut...")
-            elif self.dealer.get_points() < self.human.get_points():
+            elif self.dealer.getPoints() < self.human.getPoints():
                 print("\nCongratulations, you won I guess")
             else:  # if the computer goes higher than the player without busting
                 print("\nMuahaha just as I expected...YOU LOST!!!")
@@ -147,4 +152,4 @@ class BlackjackGame:
 
 
 game = BlackjackGame()
-game.play_game()
+game.playGame()
